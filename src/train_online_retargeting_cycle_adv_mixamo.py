@@ -53,7 +53,7 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
     ]
     for cfile in files:
       positions = np.load(data_path + folder + "/" + cfile[:-8] + "_skel.npy")
-      if positions.shape[0] >= min_steps and positions.shape[1] == 22:
+      if positions.shape[0] >= min_steps and positions.shape[1] == 52:
         sequence = np.load(data_path + folder + "/" + cfile[:-8] + "_seq.npy")
         offset = sequence[:, -8:-4]
         sequence = np.reshape(sequence[:, :-8], [sequence.shape[0], -1, 3])
