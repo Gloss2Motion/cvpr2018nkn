@@ -16,6 +16,7 @@ from os.path import exists
 from utils import get_minibatches_idx
 from utils import numpy_gaussian_noise
 from utils import get_floor
+import matplotlib.pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -24,12 +25,12 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
          euler_ord, max_steps, min_steps, num_layer, gru_units, optim,
          norm_type, mem_frac, keep_prob, learning_rate):
 
-  prefix = "Online_Retargeting_Mixamo_Cycle_Adv"
+  prefix = "Online_Retargeting_Mixamo_Cycle_Adv_new_without_hand"
 
-  for kk, vv in locals().iteritems():
-    if (kk != "prefix" and kk != "mem_frac" and kk != "batch_size"
-        and kk != "min_steps" and kk != "max_steps" and kk != "gpu"):
-      prefix += "_" + kk + "=" + str(vv)
+  # for kk, vv in locals().items():
+  #   if (kk != "prefix" and kk != "mem_frac" and kk != "batch_size"
+  #       and kk != "min_steps" and kk != "max_steps" and kk != "gpu"):
+  #     prefix += "_" + kk + "=" + str(vv)
 
   layers_units = []
   for i in range(num_layer):
@@ -52,7 +53,7 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
     ]
     for cfile in files:
       positions = np.load(data_path + folder + "/" + cfile[:-8] + "_skel.npy")
-      if positions.shape[0] >= min_steps:
+      if positions.shape[0] >= min_steps and positions.shape[1] == 22:
         sequence = np.load(data_path + folder + "/" + cfile[:-8] + "_seq.npy")
         offset = sequence[:, -8:-4]
         sequence = np.reshape(sequence[:, :-8], [sequence.shape[0], -1, 3])
@@ -65,7 +66,6 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
   trainlocal = alllocal
   trainskel = allskel
   trainglobal = allglobal
-
   print("Number of examples: " + str(len(trainlocal)))
   tskel = []
   for tt in trainskel:
@@ -78,15 +78,15 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
   local_std = allframes_n_skel.std(axis=0)[None, :]
   global_std = np.concatenate(trainglobal).std(axis=0)[None, :]
 
-  np.save(data_path[:-6] + "mixamo_local_motion_mean.npy", local_mean)
-  np.save(data_path[:-6] + "mixamo_local_motion_std.npy", local_std)
+  np.save(data_path[:-6]+ "/" + prefix + "/mixamo_local_motion_mean.npy", local_mean)
+  np.save(data_path[:-6] + "/" + prefix + "/mixamo_local_motion_std.npy", local_std)
   local_std[local_std == 0] = 1
-  np.save(data_path[:-6] + "mixamo_global_motion_mean.npy", global_mean)
-  np.save(data_path[:-6] + "mixamo_global_motion_std.npy", global_std)
+  np.save(data_path[:-6] + "/" + prefix + "/mixamo_global_motion_mean.npy", global_mean)
+  np.save(data_path[:-6] + "/" + prefix + "/mixamo_global_motion_std.npy", global_std)
 
   n_joints = alllocal[0].shape[-2]
 
-  for i in xrange(len(trainlocal)):
+  for i in range(len(trainlocal)):
     trainlocal[i] = (trainlocal[i] - local_mean) / local_std
     trainglobal[i] = (trainglobal[i] - global_mean) / global_std
     trainskel[i] = (trainskel[i] - local_mean) / local_std
@@ -96,8 +96,11 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
 
   parents = np.array([
       -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 3, 18, 19,
-      20
+      17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
+      38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
   ])
+  # parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
+  #                     16, 3, 18, 19, 20])
   with tf.device("/gpu:%d" % gpu):
     gru = EncoderDecoderGRU(batch_size, alpha, beta, gamma, omega, euler_ord,
                             n_joints, layers_units, max_steps, local_mean,
@@ -110,6 +113,13 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
 
   if not exists(logs_dir):
     makedirs(logs_dir)
+
+  dlf_ = []
+  dlr_ = []
+  gl_ = []
+  lc_ = []
+  min_gl = float('inf')
+  min_index = -1
 
   gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=mem_frac)
   with tf.Session(
@@ -155,7 +165,7 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
           aeReg_batch = np.zeros((batch_size, 1), dtype="float32")
           mask_batch = np.zeros((batch_size, max_steps), dtype="float32")
 
-          for b in xrange(batch_size):
+          for b in range(batch_size):
             low = 0
             high = trainlocal[batchidx[b]].shape[0] - max_steps
             if low >= high:
@@ -251,6 +261,11 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
           dlf, dlr, gl, lc = gru.train(
               sess, realSeq_batch, realSkel_batch, seqA_batch, skelA_batch,
               seqB_batch, skelB_batch, aeReg_batch, mask_batch, step)
+          
+          dlf_.append(dlf)
+          dlr_.append(dlr)
+          gl_.append(gl)
+          lc_.append(lc)
 
           print("step=%d/%d,  g_loss=%.5f, d_loss=%.5f, cyc_loss=%.5f, "
                 "time=%.2f+%.2f" % (step, total_steps, gl,
@@ -261,12 +276,26 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
             return
 
           if step >= 1000 and step % 1000 == 0:
+            if gl < min_gl:
+              min_gl = gl
+              min_index = step
             gru.save(sess, models_dir, step)
 
           step = step + 1
 
     gru.save(sess, models_dir, step)
 
+  length = len(dlf_)
+  fig = plt.figure()
+  plt.plot(np.arange(0, length), np.array(dlf_)+np.array(dlr_), color="green", label="d_loss")
+  plt.plot(np.arange(0, length), np.array(gl_), color="blue", label="g_loss")
+  plt.plot(np.arange(0, length), np.array(lc_), color="red", label="cyc_loss")
+  plt.xlabel("epoch")
+  plt.ylabel("loss")
+  plt.title("loss during train")
+  plt.legend()
+  fig.savefig("train_online_retargeting_cycle_adv_mixamo_new_with_hand.jpg")
+  print("min loss is {} and step is {}".format(min_gl, min_index))
 
 if __name__ == "__main__":
   parser = ArgumentParser()

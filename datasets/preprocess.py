@@ -16,7 +16,7 @@ data_paths = ["./datasets/train/"]
 
 def get_skel(joints, parents):
   c_offsets = []
-  for j in xrange(parents.shape[0]):
+  for j in range(parents.shape[0]):
     if parents[j] != -1:
       c_offsets.append(joints[j,:] - joints[parents[j],:])
     else:
@@ -74,7 +74,8 @@ def process(positions):
 
     """ Get Forward Direction """
     # Original indices + 1 for added reference joint
-    sdr_l, sdr_r, hip_l, hip_r = 15, 19, 7, 11
+    sdr_l, sdr_r, hip_l, hip_r = 15, 34, 7, 11
+    # sdr_l, sdr_r, hip_l, hip_r = 15, 19, 7, 11
     across1 = positions[:,hip_l] - positions[:,hip_r]
     across0 = positions[:,sdr_l] - positions[:,sdr_r]
     across = across0 + across1
@@ -109,11 +110,28 @@ def process(positions):
 """ This script generated the local/global motion decoupled data and
     stores it for later training """
 
+# joints_list = [
+#     "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg", "LeftLeg",
+#     "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot",
+#     "RightToeBase", "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
+#     "RightShoulder", "RightArm", "RightForeArm", "RightHand"
+# ]
+
 joints_list = ["Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg",
                "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg",
                "RightLeg", "RightFoot", "RightToeBase", "LeftShoulder",
-               "LeftArm", "LeftForeArm", "LeftHand", "RightShoulder",
-               "RightArm", "RightForeArm", "RightHand"]
+               "LeftArm", "LeftForeArm", "LeftHand",
+               "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
+               "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
+               "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",
+               "LeftHandRing1", "LeftHandRing2", "LeftHandRing3",
+               "LeftHandPinky1", "LeftHandPinky2", "LeftHandPinky3",
+               "RightShoulder", "RightArm", "RightForeArm", "RightHand",
+               "RightHandThumb1", "RightHandThumb2", "RightHandThumb3",
+               "RightHandIndex1", "RightHandIndex2", "RightHandIndex3",
+               "RightHandMiddle1", "RightHandMiddle2", "RightHandMiddle3",
+               "RightHandRing1", "RightHandRing2", "RightHandRing3",
+               "RightHandPinky1", "RightHandPinky2", "RightHandPinky3"]
 
 for data_path in data_paths:
   print("Processing "+data_path)
@@ -131,13 +149,13 @@ for data_path in data_paths:
       bvh_joints = [f.split("\n")[0] for f in bvh_file[1:]]
       to_keep = [0]
       for jname in joints_list:
-        for k in xrange(len(bvh_joints)):
+        for k in range(len(bvh_joints)):
           if jname == bvh_joints[k][-len(jname):]:
             to_keep.append(k+1)
             break
   
       anim.parents = anim.parents[to_keep]
-      for i in xrange(1,len(anim.parents)):
+      for i in range(1,len(anim.parents)):
         """ If joint not needed, connect to the previous joint """
         if anim.parents[i] not in to_keep:
           anim.parents[i] = anim.parents[i] - 1

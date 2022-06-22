@@ -31,13 +31,16 @@ def main(gpu, prefix, mem_frac):
    tgtjoints, tgtanims, inpjoints, inpanims, gtanims) = load_testdata(
        min_steps, max_steps)
 
-  local_mean = np.load(data_path[:-5] + "mixamo_local_motion_mean.npy")
-  local_std = np.load(data_path[:-5] + "mixamo_local_motion_std.npy")
-  global_mean = np.load(data_path[:-5] + "mixamo_global_motion_mean.npy")
-  global_std = np.load(data_path[:-5] + "mixamo_global_motion_std.npy")
+  print(testlocal[0].shape)
+  print(testglobal[0].shape)
+  print(testskel[0].shape)
+  local_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_local_motion_mean.npy")
+  local_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_local_motion_std.npy")
+  global_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_global_motion_mean.npy")
+  global_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_global_motion_std.npy")
+  print(local_mean.shape)
   local_std[local_std == 0] = 1
-
-  for i in xrange(len(testlocal)):
+  for i in range(len(testlocal)):
     testlocal[i] = (testlocal[i] - local_mean) / local_std
     testglobal[i] = (testglobal[i] - global_mean) / global_std
     testskel[i] = (testskel[i] - local_mean) / local_std
@@ -53,14 +56,17 @@ def main(gpu, prefix, mem_frac):
     layers_units.append(gru_units)
 
   if is_test:
-    results_dir = "./results/outputs/test/" + prefix
+    results_dir = "./results/outputs/test/" + "Online_Retargeting_Mixamo_Cycle_Adv_new"
   else:
     results_dir = "./results/outputs/train/" + prefix
-  models_dir = "./models/" + prefix
+  models_dir = "./models/" + "Online_Retargeting_Mixamo_Cycle_Adv_new"
 
+  # parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
+  #                     16, 3, 18, 19, 20])
   parents = np.array([
       -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 3, 18, 19,
-      20
+      17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
+      38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
   ])
 
   with tf.device("/gpu:%d" % gpu):
@@ -95,7 +101,7 @@ def main(gpu, prefix, mem_frac):
           gpu_options=gpu_options)) as sess:
 
     sess.run(tf.global_variables_initializer())
-
+    print(models_dir)
     if "paper_models" in models_dir:
       if "Adv" in prefix:
         best_model = "EncoderDecoderGRU.model-46000"
@@ -105,7 +111,7 @@ def main(gpu, prefix, mem_frac):
         best_model = "EncoderDecoderGRU.model-43000"
     else:
       best_model = None  # will pick last model
-
+    print(best_model)
     loaded, model_name = gru.load(sess, models_dir, best_model)
     if loaded:
       print("[*] Load SUCCESS")
@@ -113,9 +119,9 @@ def main(gpu, prefix, mem_frac):
       print("[!] Load failed...")
       return
 
-    for i in xrange(len(testlocal)):
+    for i in range(len(testlocal)):
 
-      print "Testing: " + str(i) + "/" + str(len(testlocal))
+      print("Testing: " + str(i) + "/" + str(len(testlocal)))
 
       mask_batch = np.zeros((1, max_steps), dtype="float32")
       localA_batch = testlocal[i][:max_steps].reshape([1, max_steps, -1])
@@ -149,14 +155,17 @@ def main(gpu, prefix, mem_frac):
       inpanim, inpnames, inpftime = inpanims[i]
 
       tmp_gt = Animation.positions_global(gtanim)
-      start_rots = get_orient_start(tmp_gt, tgtjoints[i][14], tgtjoints[i][18],
+      # start_rots = get_orient_start(tmp_gt, tgtjoints[i][14], tgtjoints[i][18],
+      #                               tgtjoints[i][6], tgtjoints[i][10])
+      start_rots = get_orient_start(tmp_gt, tgtjoints[i][14], tgtjoints[i][33],
                                     tgtjoints[i][6], tgtjoints[i][10])
       """Exclude angles in exclude_list as they will rotate non-existent
          children During training."""
-      exclude_list = [5, 17, 21, 9, 13]
+      exclude_list = [5, 9, 13, 17, 20, 23, 26, 29, 32, 39, 42, 45, 48, 51]
+      # exclude_list = [5, 9, 13, 17, 21]
       canim_joints = []
       cquat_joints = []
-      for l in xrange(len(tgtjoints[i])):
+      for l in range(len(tgtjoints[i])):
         if l not in exclude_list:
           canim_joints.append(tgtjoints[i][l])
           cquat_joints.append(l)
@@ -189,7 +198,7 @@ def main(gpu, prefix, mem_frac):
       else:
         to_bvh = to_names[i]
 
-      bvh_path = "./results/blender_files/" + to_bvh.split("_")[-1]
+      bvh_path = "./results/Online_Retargeting_Mixamo_Cycle_Adv_new/blender_files/" + to_bvh.split("_")[-1]
       if not os.path.exists(bvh_path):
         os.makedirs(bvh_path)
 
@@ -221,7 +230,7 @@ def main(gpu, prefix, mem_frac):
           input_=seqA_batch[:, :step],
           gt=gt)
 
-  print "Done."
+  print("Done.")
 
 
 if __name__ == "__main__":
