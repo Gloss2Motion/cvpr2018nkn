@@ -191,10 +191,12 @@ def main(gpu, prefix, mem_frac):
       outputB_bvh[:, -3][np.abs(seqA_batch[0, :, -3]) <= 1e-2] = 0.
 
       outputB_bvh[:, :3] = gtanim.positions[:1, 0, :].copy()
+      print(outputB_bvh.shape)
       wjs, rots = put_in_world_bvh(outputB_bvh.copy(), start_rots)
       tjoints[:, 0, :] = wjs[0, :, 0].copy()
 
       cpy_bvh = seqA_batch[0].copy()
+      print(cpy_bvh.shape)
       cpy_bvh[:, :3] = gtanim.positions[:1, 0, :].copy()
       bl_wjs, _ = put_in_world_bvh(cpy_bvh.copy(), start_rots)
       bl_tjoints[:, 0, :] = bl_wjs[0, :, 0].copy()
@@ -216,14 +218,14 @@ def main(gpu, prefix, mem_frac):
         os.makedirs(bvh_path)
 
       bvh_path += "/{0:05d}".format(i)
-      BVH.save(bvh_path + "_from=" + from_bvh + "_to=" + to_bvh + "_gt.bvh",
-               gtanim, gtnames, gtftime)
+      # BVH.save(bvh_path + "_from=" + from_bvh + "_to=" + to_bvh + "_gt.bvh",
+      #          gtanim, gtnames, gtftime)
 
       tgtanim.positions[:, tgtjoints[i]] = bl_tjoints.copy()
       tgtanim.offsets[tgtjoints[i][1:]] = bl_tjoints[0, 1:]
 
-      BVH.save(bvh_path + "_from=" + from_bvh + "_to=" + to_bvh + "_cpy.bvh",
-               tgtanim, tgtnames, tgtftime)
+      # BVH.save(bvh_path + "_from=" + from_bvh + "_to=" + to_bvh + "_cpy.bvh",
+      #          tgtanim, tgtnames, tgtftime)
       tgtanim.positions[:, tgtjoints[i]] = tjoints
       tgtanim.offsets[tgtjoints[i][1:]] = tjoints[0, 1:]
       """World rotation of character (global rotation)"""

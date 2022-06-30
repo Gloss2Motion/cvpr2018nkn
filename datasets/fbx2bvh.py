@@ -5,7 +5,7 @@ import numpy as np
 from os import listdir, makedirs, system
 from os.path import exists
 
-data_path = "./datasets/train/"
+data_path = "./datasets/新建文件夹/test/"
 directories = sorted([f for f in listdir(data_path) if not f.startswith(".")])
 for d in directories:
   files = sorted([f for f in listdir(data_path+d) if f.endswith(".fbx")])
@@ -21,9 +21,9 @@ for d in directories:
     frame_end = -9999
     action = bpy.data.actions[-1]
     if  action.frame_range[1] > frame_end:
-      frame_end = action.frame_range[1]
+      frame_end = int(action.frame_range[1])
     if action.frame_range[0] < frame_start:
-      frame_start = action.frame_range[0]
+      frame_start = int(action.frame_range[0])
 
     frame_end = np.max([60, frame_end])
     bpy.ops.export_anim.bvh(filepath=dumppath,
