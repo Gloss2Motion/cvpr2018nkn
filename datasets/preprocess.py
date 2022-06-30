@@ -12,7 +12,7 @@ from Pivots import Pivots
 from os import listdir, makedirs, system
 from os.path import exists
 
-data_paths = ["./datasets/train/"]
+data_paths = ["./datasets/新建文件夹/test/"]
 
 def get_skel(joints, parents):
   c_offsets = []
@@ -32,9 +32,9 @@ def softmin(x, **kw):
     return -softmax(-x, **kw)
 
 def process(positions):
-
     """ Put on Floor """
-    fid_l, fid_r = np.array([8,9]), np.array([12,13])
+    # fid_l, fid_r = np.array([4,9]), np.array([12,13])
+    fid_l, fid_r = np.array([4]), np.array([5])
     foot_heights = np.minimum(positions[:,fid_l,1],
                               positions[:,fid_r,1]).min(axis=1)
     floor_height = softmin(foot_heights, softness=0.5, axis=0)
@@ -47,8 +47,8 @@ def process(positions):
     positions = np.concatenate([reference[:,np.newaxis], positions], axis=1)
 
     """ Get Foot Contacts """
-    velfactor, heightfactor = np.array([0.15,0.15]), np.array([9.0, 6.0])
-
+    # velfactor, heightfactor = np.array([0.15,0.15]), np.array([9.0, 6.0])
+    velfactor, heightfactor = np.array([0.15]), np.array([9.0])
     feet_l_x = (positions[1:,fid_l,0] - positions[:-1,fid_l,0])**2
     feet_l_y = (positions[1:,fid_l,1] - positions[:-1,fid_l,1])**2
     feet_l_z = (positions[1:,fid_l,2] - positions[:-1,fid_l,2])**2
@@ -74,8 +74,9 @@ def process(positions):
 
     """ Get Forward Direction """
     # Original indices + 1 for added reference joint
-    sdr_l, sdr_r, hip_l, hip_r = 15, 34, 7, 11
+    # sdr_l, sdr_r, hip_l, hip_r = 15, 34, 7, 11
     # sdr_l, sdr_r, hip_l, hip_r = 15, 19, 7, 11
+    sdr_l, sdr_r, hip_l, hip_r = 7, 26, 5, 6
     across1 = positions[:,hip_l] - positions[:,hip_r]
     across0 = positions[:,sdr_l] - positions[:,sdr_r]
     across = across0 + across1
@@ -109,18 +110,32 @@ def process(positions):
 
 """ This script generated the local/global motion decoupled data and
     stores it for later training """
-
+"""original joints"""
 # joints_list = [
 #     "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg", "LeftLeg",
 #     "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot",
 #     "RightToeBase", "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
 #     "RightShoulder", "RightArm", "RightForeArm", "RightHand"
 # ]
-
-joints_list = ["Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg",
-               "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg",
-               "RightLeg", "RightFoot", "RightToeBase", "LeftShoulder",
-               "LeftArm", "LeftForeArm", "LeftHand",
+"""with hands joints"""
+# joints_list = ["Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg",
+#                "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg",
+#                "RightLeg", "RightFoot", "RightToeBase", "LeftShoulder",
+#                "LeftArm", "LeftForeArm", "LeftHand",
+#                "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
+#                "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
+#                "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",
+#                "LeftHandRing1", "LeftHandRing2", "LeftHandRing3",
+#                "LeftHandPinky1", "LeftHandPinky2", "LeftHandPinky3",
+#                "RightShoulder", "RightArm", "RightForeArm", "RightHand",
+#                "RightHandThumb1", "RightHandThumb2", "RightHandThumb3",
+#                "RightHandIndex1", "RightHandIndex2", "RightHandIndex3",
+#                "RightHandMiddle1", "RightHandMiddle2", "RightHandMiddle3",
+#                "RightHandRing1", "RightHandRing2", "RightHandRing3",
+#                "RightHandPinky1", "RightHandPinky2", "RightHandPinky3"]
+"""up joints"""
+joints_list = ["Spine", "Spine1", "Spine2", "LeftUpLeg", "RightUpLeg",
+               "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
                "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
                "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
                "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",

@@ -16,10 +16,24 @@ from Quaternions import Quaternions
 
 
 def get_bonelengths(joints):
-  parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
-                      16, 3, 18, 19, 20])
+  """original parents"""
+  # parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
+  #                     16, 3, 18, 19, 20])
+
+  """with hands parents"""
+  # parents = np.array([
+  #     -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 17, 18, 19,
+  #     17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
+  #     38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
+  # ])
+
+  """only up parents"""
+  parents = np.array([
+    -1, 0, 1, 2, 0, 0, 3, 6, 7, 8, 9, 10, 11, 9, 13, 14, 9, 16, 17, 9, 19, 20, 9, 22,
+    23, 3, 25, 26, 27, 28, 29, 30, 28, 32, 33, 28, 35, 36, 28, 38, 39, 28, 41, 42
+  ])
   c_offsets = []
-  for j in xrange(parents.shape[0]):
+  for j in range(parents.shape[0]):
     if parents[j] != -1:
       c_offsets.append(joints[:,:,j,:] - joints[:,:,parents[j],:])
     else:
@@ -29,14 +43,26 @@ def get_bonelengths(joints):
 
 
 def compare_bls(bl1, bl2):
-  relbones = np.array([-1, 0, 1, 2, 3, -1, 5, 6, 7, -1, 9, 10, 11, -1, 13, 14,
-                       15, -1, 17, 18, 19])
+  """original relbones"""
+  # relbones = np.array([-1, 0, 1, 2, 3, -1, 5, 6, 7, -1, 9, 10, 11, -1, 13, 14,
+  #                      15, -1, 17, 18, 19])
+  """with hands relbones"""
+#   relbones = np.array([
+#       -1, 0, 1, 2, 3, -1, 5, 6, 7, -1, 9, 10, 11, -1, 13, 14, 15, -1, 17, 18, -1,
+#       20, 21, -1, 23, 24, -1, 26, 27, -1, 29, 30, -1, 32, 33, 34, 35, 36, 37,
+#       -1, 39, 40, -1, 42, 43, -1, 45, 46, -1, 48, 49
+#   ])
 
+  """only up relbones"""
+  relbones = np.array([
+    -1, 0, 1, -1, -1, -1, 5, 6, 7, 8, 9, 10, -1, 12, 13, -1, 15, 16, -1, 18, 19, -1, 21, 22,
+    -1, 24, 25, 26, 27, 28, 29, -1, 31, 32, -1, 34, 35, -1, 37, 38, -1, 40, 41, -1
+  ])
   bl_diff = np.abs(bl1-bl2).mean()
 
   bl1ratios = []
   bl2ratios = []
-  for j in xrange(len(relbones)):
+  for j in range(len(relbones)):
     if relbones[j] != -1:
       bl1ratios.append(bl1[j]/bl1[relbones[j]])
       bl2ratios.append(bl2[j]/bl2[relbones[j]])
@@ -47,14 +73,17 @@ def compare_bls(bl1, bl2):
 
 
 def get_height(joints):
-  return (np.sqrt(((joints[5,:]-joints[4,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[4,:]-joints[3,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[3,:]-joints[2,:])**2).sum(axis=-1)) +
+  # return (np.sqrt(((joints[5,:]-joints[4,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[4,:]-joints[3,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[3,:]-joints[2,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[2,:]-joints[1,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[1,:]-joints[0,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[6,:]-joints[7,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[7,:]-joints[8,:])**2).sum(axis=-1)) +
+  #         np.sqrt(((joints[8,:]-joints[9,:])**2).sum(axis=-1)))
+  return (np.sqrt(((joints[3,:]-joints[2,:])**2).sum(axis=-1)) +
           np.sqrt(((joints[2,:]-joints[1,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[1,:]-joints[0,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[6,:]-joints[7,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[7,:]-joints[8,:])**2).sum(axis=-1)) +
-          np.sqrt(((joints[8,:]-joints[9,:])**2).sum(axis=-1)))
+          np.sqrt(((joints[1,:]-joints[0,:])**2).sum(axis=-1)))
 
 
 def put_in_world(states):
@@ -87,9 +116,9 @@ def put_in_world(states):
 """ These paths are set with respect to the training settings in the README file.
     Please change them for the models you may train."""
 
-seq_path1 = "./results/outputs/test/Online_Retargeting_Mixamo_gru_units=512_optim=adam_learning_rate=0.0001_num_layer=2_alpha=100.0_euler_ord=yzx_omega=0.01_keep_prob=0.9_gamma=10.0/"
-seq_path2 = "./results/outputs/test/Online_Retargeting_Mixamo_Cycle_gru_units=512_optim=adam_learning_rate=0.0001_num_layer=2_alpha=100.0_euler_ord=yzx_omega=0.01_keep_prob=0.9_gamma=10.0/"
-seq_path3 = "./results/outputs/test/Online_Retargeting_Mixamo_Cycle_Adv_beta=0.001_gru_units=512_optim=adam_d_arch=2_learning_rate=0.0001_omega=0.01_norm_type=batch_norm_d_rand=True_num_layer=2_alpha=100.0_euler_ord=yzx_margin=0.3_keep_prob=0.9_gamma=10.0/"
+seq_path1 = "./results/outputs/test/Online_Retargeting_Mixamo_Cycle_Adv_with_up/"
+seq_path2 = "./results/outputs/test/Online_Retargeting_Mixamo_Cycle_Adv_with_up/"
+seq_path3 = "./results/outputs/test/Online_Retargeting_Mixamo_Cycle_Adv_with_up/"
 
 files = sorted([f for f in listdir(seq_path1) if f.endswith(".npz")])
 
@@ -112,7 +141,7 @@ filenames = []
 if not path.exists("./results/quantitative/"):
   makedirs("./results/quantitative/")
 
-for i in xrange(len(files)):
+for i in range(len(files)):
   filenames.append(files[i])
   from_lbl = files[i].split("from=")[1].split("to=")[0]
   to_lbl = files[i].split("to=")[1].split(".npz")[0][:-1]
@@ -156,7 +185,7 @@ joints2 = np.concatenate(joints2)
 joints3 = np.concatenate(joints3)
 jointsgt = np.concatenate(jointsgt)
 
-f = open("./results/quantitative/result_tables_mixamo_online.txt", "w")
+f = open("./results/quantitative/result_tables_mixamo_online_with_up.txt", "w")
 
 feet = np.array([9, 13])
 f.write("###########################################################\n")
@@ -178,6 +207,7 @@ for label in ["new_motion/new_character","new_motion/known_character",
   idxs = [i for i, j in enumerate(labels)
           if label.split("/")[0] in j.split("/")[0] and
              label.split("/")[1] in j.split("/")[1]]
+  print(idxs)
   f.write("## Number of Examples: "+
           "{0:.2f}".format(len(idxs))+".\n")
   f.write("## AE\t\t\t\t\t"+

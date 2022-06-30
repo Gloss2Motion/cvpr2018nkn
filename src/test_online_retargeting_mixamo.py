@@ -34,10 +34,10 @@ def main(gpu, prefix, mem_frac):
   print(testlocal[0].shape)
   print(testglobal[0].shape)
   print(testskel[0].shape)
-  local_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_local_motion_mean.npy")
-  local_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_local_motion_std.npy")
-  global_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_global_motion_mean.npy")
-  global_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_new/mixamo_global_motion_std.npy")
+  local_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_with_up/mixamo_local_motion_mean.npy")
+  local_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_with_up/mixamo_local_motion_std.npy")
+  global_mean = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_with_up/mixamo_global_motion_mean.npy")
+  global_std = np.load(data_path[:-5] + "Online_Retargeting_Mixamo_Cycle_Adv_with_up/mixamo_global_motion_std.npy")
   print(local_mean.shape)
   local_std[local_std == 0] = 1
   for i in range(len(testlocal)):
@@ -56,17 +56,26 @@ def main(gpu, prefix, mem_frac):
     layers_units.append(gru_units)
 
   if is_test:
-    results_dir = "./results/outputs/test/" + "Online_Retargeting_Mixamo_Cycle_Adv_new"
+    results_dir = "./results/outputs/test/" + "Online_Retargeting_Mixamo_Cycle_Adv_with_up"
   else:
     results_dir = "./results/outputs/train/" + prefix
-  models_dir = "./models/" + "Online_Retargeting_Mixamo_Cycle_Adv_new"
+  models_dir = "./models/" + "Online_Retargeting_Mixamo_Cycle_Adv_with_up"
 
+  """original parents"""
   # parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
   #                     16, 3, 18, 19, 20])
+
+  """with hands parents"""
+  # parents = np.array([
+  #     -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 17, 18, 19,
+  #     17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
+  #     38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
+  # ])
+
+  """only up parents"""
   parents = np.array([
-      -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 3, 18, 19,
-      17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
-      38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
+    -1, 0, 1, 2, 0, 0, 3, 6, 7, 8, 9, 10, 11, 9, 13, 14, 9, 16, 17, 9, 19, 20, 9, 22,
+    23, 3, 25, 26, 27, 28, 29, 30, 28, 32, 33, 28, 35, 36, 28, 38, 39, 28, 41, 42
   ])
 
   with tf.device("/gpu:%d" % gpu):
@@ -161,8 +170,12 @@ def main(gpu, prefix, mem_frac):
                                     tgtjoints[i][6], tgtjoints[i][10])
       """Exclude angles in exclude_list as they will rotate non-existent
          children During training."""
-      exclude_list = [5, 9, 13, 17, 20, 23, 26, 29, 32, 39, 42, 45, 48, 51]
+      """with hand exclude_list"""
+      # exclude_list = [5, 9, 13, 20, 23, 26, 29, 32, 39, 42, 45, 48, 51]
+      """original exclude_list"""
       # exclude_list = [5, 9, 13, 17, 21]
+      """onnly up exclude_list"""
+      exclude_list = [4, 5, 12, 15, 18, 21, 24, 31, 34, 37, 40]
       canim_joints = []
       cquat_joints = []
       for l in range(len(tgtjoints[i])):
@@ -198,7 +211,7 @@ def main(gpu, prefix, mem_frac):
       else:
         to_bvh = to_names[i]
 
-      bvh_path = "./results/Online_Retargeting_Mixamo_Cycle_Adv_new/blender_files/" + to_bvh.split("_")[-1]
+      bvh_path = "./results/Online_Retargeting_Mixamo_Cycle_Adv_with_up/blender_files/" + to_bvh.split("_")[-1]
       if not os.path.exists(bvh_path):
         os.makedirs(bvh_path)
 
@@ -221,7 +234,8 @@ def main(gpu, prefix, mem_frac):
                tgtanim, tgtnames, tgtftime)
       BVH.save(bvh_path + "_from=" + from_bvh + "_to=" + to_bvh + "_inp.bvh",
                inpanim, inpnames, inpftime)
-
+      print(seqA_batch[:, :step].shape)
+      print(gt.shape)
       np.savez(
           res_path + "_from=" + from_names[i] + "_to=" + to_names[i] + ".npz",
           outputA_=outputB[:, :step],

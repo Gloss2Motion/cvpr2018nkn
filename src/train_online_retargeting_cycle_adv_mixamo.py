@@ -25,7 +25,7 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
          euler_ord, max_steps, min_steps, num_layer, gru_units, optim,
          norm_type, mem_frac, keep_prob, learning_rate):
 
-  prefix = "Online_Retargeting_Mixamo_Cycle_Adv_new_without_hand"
+  prefix = "Online_Retargeting_Mixamo_Cycle_Adv_with_up"
 
   # for kk, vv in locals().items():
   #   if (kk != "prefix" and kk != "mem_frac" and kk != "batch_size"
@@ -53,16 +53,18 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
     ]
     for cfile in files:
       positions = np.load(data_path + folder + "/" + cfile[:-8] + "_skel.npy")
-      if positions.shape[0] >= min_steps and positions.shape[1] == 52:
+      if positions.shape[0] >= min_steps and positions.shape[1] == 44:
         sequence = np.load(data_path + folder + "/" + cfile[:-8] + "_seq.npy")
-        offset = sequence[:, -8:-4]
-        sequence = np.reshape(sequence[:, :-8], [sequence.shape[0], -1, 3])
+        # offset = sequence[:, -8:-4]
+        offset = sequence[:, -6:-2]
+        # sequence = np.reshape(sequence[:, :-8], [sequence.shape[0], -1, 3])
+        sequence = np.reshape(sequence[:, :-6], [sequence.shape[0], -1, 3])
         positions[:, 0, :] = sequence[:, 0, :]
         alllocal.append(sequence)
         allglobal.append(offset)
         allskel.append(positions)
         allnames.append(folder)
-
+  data_path = "./datasets/train/"
   trainlocal = alllocal
   trainskel = allskel
   trainglobal = allglobal
@@ -94,13 +96,23 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
   models_dir = "./models/" + prefix
   logs_dir = "./logs/" + prefix
 
-  parents = np.array([
-      -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 3, 18, 19,
-      17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
-      38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
-  ])
+  """original parents"""
   # parents = np.array([-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15,
   #                     16, 3, 18, 19, 20])
+
+  # """with hands parents"""
+  # parents = np.array([
+  #     -1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 0, 10, 11, 12, 3, 14, 15, 16, 17, 18, 19,
+  #     17, 21, 22, 17, 24, 25, 17, 27, 28, 17, 30, 31, 3, 33, 34, 35, 36, 37,
+  #     38, 36, 40, 41, 36, 43, 44, 36, 46, 47, 36, 49, 50
+  # ])
+
+  """only up parents"""
+  parents = np.array([
+    -1, 0, 1, 2, 0, 0, 3, 6, 7, 8, 9, 10, 11, 9, 13, 14, 9, 16, 17, 9, 19, 20, 9, 22,
+    23, 3, 25, 26, 27, 28, 29, 30, 28, 32, 33, 28, 35, 36, 28, 38, 39, 28, 41, 42
+  ])
+
   with tf.device("/gpu:%d" % gpu):
     gru = EncoderDecoderGRU(batch_size, alpha, beta, gamma, omega, euler_ord,
                             n_joints, layers_units, max_steps, local_mean,
@@ -275,7 +287,7 @@ def main(gpu, batch_size, alpha, beta, gamma, omega, margin, d_arch, d_rand,
           if np.isnan(gl) or np.isinf(gl):
             return
 
-          if step >= 1000 and step % 1000 == 0:
+          if step >= 2000 and step % 2000 == 0:
             if gl < min_gl:
               min_gl = gl
               min_index = step

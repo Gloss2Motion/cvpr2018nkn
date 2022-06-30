@@ -176,40 +176,80 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
 
   km_kc = {
       "known_motion/Kaya/": "known_character/Warrok_W_Kurniawan1/",
-      "known_motion/Big_Vegas/": "known_character/Malcolm1/"
+      "known_motion/Big_Vegas/": "known_character/Remy1/"
   }
   km_nc = {
-      "known_motion/AJ/": "new_character/Mutant1/",
-      "known_motion/Peasant_Man/": "new_character/Liam1/"
+      "known_motion/AJ/": "new_character/Amy1/",
+      "known_motion/Remy/": "new_character/Boss1/"
   }
   nm_kc = {
-      "new_motion/Granny/": "known_character/Malcolm2/",
+      "new_motion/Granny/": "known_character/Remy2/",
       "new_motion/Claire/": "known_character/Warrok_W_Kurniawan2/"
   }
   nm_nc = {
-      "new_motion/Mutant/": "new_character/Liam2/",
-      "new_motion/Claire/": "new_character/Mutant2/"
+      "new_motion/Amy/": "new_character/Boss2/",
+      "new_motion/Claire/": "new_character/Amy2/"
   }
 
-  joints_list = [
-      "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg", "LeftLeg",
-      "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot",
-      "RightToeBase", "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
-      "RightShoulder", "RightArm", "RightForeArm", "RightHand"
-  ]
+  """original joints"""
+  # joints_list = [
+  #     "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg", "LeftLeg",
+  #     "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot",
+  #     "RightToeBase", "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
+  #     "RightShoulder", "RightArm", "RightForeArm", "RightHand"
+  # ]
+  """with hands joints"""
+  # joints_list = ["Spine", "Spine1", "Spine2", "Neck", "Head", "LeftUpLeg",
+  #                "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg",
+  #                "RightLeg", "RightFoot", "RightToeBase", "LeftShoulder",
+  #                "LeftArm", "LeftForeArm", "LeftHand",
+  #                "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
+  #                "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
+  #                "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",
+  #                "LeftHandRing1", "LeftHandRing2", "LeftHandRing3",
+  #                "LeftHandPinky1", "LeftHandPinky2", "LeftHandPinky3",
+  #                "RightShoulder", "RightArm", "RightForeArm", "RightHand",
+  #                "RightHandThumb1", "RightHandThumb2", "RightHandThumb3",
+  #                "RightHandIndex1", "RightHandIndex2", "RightHandIndex3",
+  #                "RightHandMiddle1", "RightHandMiddle2", "RightHandMiddle3",
+  #                "RightHandRing1", "RightHandRing2", "RightHandRing3",
+  #                "RightHandPinky1", "RightHandPinky2", "RightHandPinky3"]
+  """up joints"""
+  joints_list = ["Spine", "Spine1", "Spine2", "LeftUpLeg", "RightUpLeg",
+                "LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand",
+                "LeftHandThumb1", "LeftHandThumb2", "LeftHandThumb3",
+                "LeftHandIndex1", "LeftHandIndex2", "LeftHandIndex3",
+                "LeftHandMiddle1", "LeftHandMiddle2", "LeftHandMiddle3",
+                "LeftHandRing1", "LeftHandRing2", "LeftHandRing3",
+                "LeftHandPinky1", "LeftHandPinky2", "LeftHandPinky3",
+                "RightShoulder", "RightArm", "RightForeArm", "RightHand",
+                "RightHandThumb1", "RightHandThumb2", "RightHandThumb3",
+                "RightHandIndex1", "RightHandIndex2", "RightHandIndex3",
+                "RightHandMiddle1", "RightHandMiddle2", "RightHandMiddle3",
+                "RightHandRing1", "RightHandRing2", "RightHandRing3",
+                "RightHandPinky1", "RightHandPinky2", "RightHandPinky3"]
 
   test_list = [km_kc, km_nc, nm_kc, nm_nc]
   count = 0
   for test_item in test_list:
-    for inp, tgt in test_item.iteritems():
+    
+    for inp, tgt in test_item.items():
       files = sorted([
           f for f in listdir(data_path + inp)
           if not f.startswith(".") and f.endswith("_seq.npy")
       ])
+      
       for cfile in files:
         # Put the skels at the same height as the sequence
         tgtskel = np.load(data_path + tgt + "/" + cfile[:-8] + "_skel.npy")
         inpskel = np.load(data_path + inp + "/" + cfile[:-8] + "_skel.npy")
+        if tgtskel.shape[1] != 44 or inpskel.shape[1] != 44 or tgtskel.shape != inpskel.shape:
+          if tgtskel.shape[1] != 44:
+            print(tgt)
+          if inpskel.shape[1] != 44:
+            print(inp)
+          print(tgt,inp,tgtskel.shape, inpskel.shape,cfile)
+          continue
         if tgtskel.shape[0] >= min_steps + 1:
           if not ("Claire" in inp and "Warrok" in tgt):
             count += 1
@@ -229,7 +269,7 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
           ]
           ito_keep = [0]
           for jname in joints_list:
-            for k in xrange(len(ibvh_joints)):
+            for k in range(len(ibvh_joints)):
               if jname == ibvh_joints[k][-len(jname):]:
                 ito_keep.append(k + 1)
                 break
@@ -242,7 +282,7 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
           ]
           tto_keep = [0]
           for jname in joints_list:
-            for k in xrange(len(tbvh_joints)):
+            for k in range(len(tbvh_joints)):
               if jname == tbvh_joints[k][-len(jname):]:
                 tto_keep.append(k + 1)
                 break
@@ -267,21 +307,24 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
             tgtanim.positions[:, 0] = inpanim.positions[:, 0].copy()
 
           inseq = np.load(data_path + inp + "/" + cfile[:-8] + "_seq.npy")
-
           if inseq.shape[0] < min_steps:
             continue
 
           outseq = np.load(data_path + tgt + "/" + cfile[:-8] + "_seq.npy")
           """Subtract lowers point in first timestep for floor contact"""
-          floor_diff = inseq[0, 1:-8:3].min() - outseq[0, 1:-8:3].min()
-          outseq[:, 1:-8:3] += floor_diff
+          # floor_diff = inseq[0, 1:-8:3].min() - outseq[0, 1:-8:3].min()
+          # outseq[:, 1:-8:3] += floor_diff
+          floor_diff = inseq[0, 1:-6:3].min() - outseq[0, 1:-6:3].min()
+          outseq[:, 1:-6:3] += floor_diff
           tgtskel[:, 0, 1] = outseq[:, 1].copy()
 
-          offset = inseq[:, -8:-4]
-          inseq = np.reshape(inseq[:, :-8], [inseq.shape[0], -1, 3])
+          # offset = inseq[:, -8:-4]
+          # inseq = np.reshape(inseq[:, :-8], [inseq.shape[0], -1, 3])
+          offset = inseq[:, -6:-2]
+          inseq = np.reshape(inseq[:, :-6], [inseq.shape[0], -1, 3])
           num_samples = inseq.shape[0] // max_steps
 
-          for s in xrange(num_samples):
+          for s in range(num_samples):
             inpjoints.append(ito_keep)
             tgtjoints.append(tto_keep)
             inpanims.append([
@@ -298,7 +341,8 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
             ])
             inlocal.append(inseq[s * max_steps:(s + 1) * max_steps])
             inglobal.append(offset[s * max_steps:(s + 1) * max_steps])
-            tgtdata.append(outseq[s * max_steps:(s + 1) * max_steps, :-4])
+            # tgtdata.append(outseq[s * max_steps:(s + 1) * max_steps, :-4])
+            tgtdata.append(outseq[s * max_steps:(s + 1) * max_steps, :-2])
             tgtskels.append(tgtskel[s * max_steps:(s + 1) * max_steps])
             from_names.append(inp.split("/")[0] + "_" + inp.split("/")[1])
             to_names.append(tgt.split("/")[0] + "_" + tgt.split("/")[1])
@@ -311,11 +355,11 @@ def load_testdata(min_steps, max_steps, is_h36m=False):
             gtanims.append([gtanim.copy()[-max_steps:], tgtnames, tgtftime])
             inlocal.append(inseq[-max_steps:])
             inglobal.append(offset[-max_steps:])
-            tgtdata.append(outseq[-max_steps:, :-4])
+            # tgtdata.append(outseq[-max_steps:, :-4])
+            tgtdata.append(outseq[-max_steps:, :-2])
             tgtskels.append(tgtskel[-max_steps:])
             from_names.append(inp.split("/")[0] + "_" + inp.split("/")[1])
             to_names.append(tgt.split("/")[0] + "_" + tgt.split("/")[1])
-
   return (inlocal, inglobal, tgtdata, tgtskels, from_names, to_names,
           tgtjoints, tgtanims, inpjoints, inpanims, gtanims)
 
